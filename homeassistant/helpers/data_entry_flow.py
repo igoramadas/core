@@ -57,6 +57,7 @@ class FlowManagerIndexView(_BaseFlowManagerView):
                 vol.Required("handler"): vol.Any(str, list),
                 vol.Optional("show_advanced_options", default=False): cv.boolean,
                 vol.Optional("source", default=config_entries.SOURCE_USER): cv.string,
+                vol.Optional("entry_id"): cv.string,
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -68,13 +69,16 @@ class FlowManagerIndexView(_BaseFlowManagerView):
         else:
             handler = data["handler"]
 
+        context = {
+            "source": data["source"],
+            "show_advanced_options": data["show_advanced_options"],
+        }
+        if entry_id := data.get("entry_id"):
+            context["entry_id"] = entry_id
         try:
             result = await self._flow_mgr.async_init(
                 handler,  # type: ignore[arg-type]
-                context={
-                    "source": data["source"],
-                    "show_advanced_options": data["show_advanced_options"],
-                },
+                context=context,
             )
         except data_entry_flow.UnknownHandler:
             return self.json_message("Invalid handler specified", HTTPStatus.NOT_FOUND)
